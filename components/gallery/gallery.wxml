@@ -1,0 +1,16 @@
+<!--components/gallery-custom/gallery-custom.wxml-->
+<view class="gallery-custom-content {{currentShow ? 'gallery-custom-show' : ''}}" bind:touchstart="onImageStart" bind:touchend="onImageEnd" catch:touchmove="throttleImageMove" bind:tap="doubleClick" wx:if="{{currentShow}}" >
+  <view class="gallery-custom-list tran" style="transform: translateX(-{{(currentCount - 1) * contentWidth}}px) translateZ(0); width: {{contentWidth * currentImgs.length}}px;">
+    <view class="gallery-custom-item" wx:for="{{currentImgs}}" wx:key="src">
+      <view class="gallery-custom-loading" wx:if="{{isLoading}}">
+        <text class="iconfont sp_weapp_iconjiazaizhong rotate margin-right-xs" />
+      </view>
+      <image class="weui-gallery__img tran" src="{{item.src}}" style="width:{{item.width}}px;height:{{item.height}}px;transform:translate3d({{item.imageX}}px,{{item.imageY}}px,0) scale({{imageScale}}); translateZ(0); transition-duration:.3s;" wx:else></image>
+    </view>
+  </view>
+  <view class="gallery-custom-current flex justify-between" style="padding-top:{{CustomBar}}px;">
+    <text>{{currentCount}}/{{currentImgs.length}}</text>
+    <text class="gallery-custom-close" title="close" catch:tap="hideGallery">×</text>
+  </view>
+  <view class="gallery-custom-bottom">{{imgUrls[currentCount - 1] ? imgUrls[currentCount - 1].title : ''}}</view>
+</view>

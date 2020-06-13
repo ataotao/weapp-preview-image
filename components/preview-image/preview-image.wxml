@@ -1,0 +1,11 @@
+<!-- components/preview-image/preview-image.wxml -->
+<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}">
+  <view class="preview-image-list tran" style="transform: translateX(-{{(_currentCount + 1) * _contentWidth}}px) translateZ(0); width: {{_contentWidth * _currentImgs.length}}px;">
+    <view class="preview-image-item" wx:for="{{_currentImgs}}" wx:key="src">
+      <view class="preview-image-loading" wx:if="{{_isLoading}}">
+        <text class="iconfont sp_weapp_iconjiazaizhong rotate margin-right-xs" />
+      </view>
+      <image class="tran" src="{{item.src}}" style="width:{{item.width}}px;height:{{item.height}}px;transform:translate3d({{item.imageX}}px,{{item.imageY}}px,0) scale({{_imageScale}}); translateZ(0); transition-duration:.3s;" wx:else></image>
+    </view>
+  </view>
+</view>
