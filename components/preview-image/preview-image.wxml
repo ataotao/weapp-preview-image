@@ -11,13 +11,14 @@
   </view>
 </view> -->
 
-<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" bind:touchstart="touchStart" bind:touchmove="throttleTouchMove" bind:touchend="touchEnd">
-  <view class="preview-image-list tran" style="transform: translateX(-{{_currentCount * _contentWidth}}px); width: {{_contentWidth * _currentImgs.length}}px;">
-    <view class="preview-image-item" wx:for="{{_currentImgs}}" wx:key="src">
-      <view class="preview-image-loading" wx:if="{{_isLoading}}">
+<!-- <view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" bind:touchstart="touchStart" bind:touchmove="throttleTouchMove" bind:touchend="touchEnd" bind:tap="doubleClick"> -->
+<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" catch:touchstart="touchInit.start" catch:touchmove="touchInit.move" catch:touchend="touchInit.end" catch:tap="touchInit.cancel">
+  <view class="preview-image-list" style="transform: translate(-{{_currentCount * _contentWidth}}px, 0); width: {{_contentWidth * _currentImgs.length}}px;">
+    <view class="preview-image-item tran" wx:for="{{_currentImgs}}" wx:key="src">
+      <view class="preview-image-loading" hidden="{{!_isLoading}}">
         <text class="iconfont sp_weapp_iconjiazaizhong rotate margin-right-xs">loading...</text>
       </view>
-      <image class=" tran" src="{{item.src}}" style="width:{{item.width}}px; height:{{item.height}}px; transform:translate({{item.imageX}}px, {{item.imageY}}px); scale({{_imageScale}}); transition-duration:.3s;" wx:else></image>
+      <image src="{{item.src}}" style="width:{{item.width}}px; height:{{item.height}}px; transform:translate3d({{item.imageX}}px, {{item.imageY}}px, 0) scale({{_imageScale}}); transition-duration:.2s;" hidden="{{_isLoading}}"></image>
     </view>
   </view>
 </view>

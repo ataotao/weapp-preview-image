@@ -1,12 +1,18 @@
 const app = getApp();
-let touchStartX = 0;//触摸时的原点  
-let touchStartY = 0;//触摸时的原点  
-let time = 0;// 时间记录，用于滑动时且时间小于1s则执行左右滑动  
-let interval = "";// 记录/清理时间记录  
+import _Touch from "/touch";
+let touchStartX = 0; //触摸时的原点
+let touchStartY = 0; //触摸时的原点
+let time = 0; // 时间记录，用于滑动时且时间小于1s则执行左右滑动
+let interval = ""; // 记录/清理时间记录
 let touchMoveX = 0; // x轴方向移动的距离
 let touchMoveY = 0; // y轴方向移动的距离
+let hypotenuseLength = 0; // 双指触摸时斜边长度
+let operateType = null; // 移动/拖动类型 move | zoom | doubleClick
+let lastTapTime = 0; // 双击判断
+const MIN_SCALE = 1; // 最小缩放值
+const MAX_SCALE = 2; // 最大缩放值
 
-import { throttle, AutoSize, getSystemInfo } from "./utils";
+import { throttle, debounce, AutoSize, getSystemInfo } from "./utils";
 Component({
   options: {
     addGlobalClass: true,
@@ -92,14 +98,117 @@ Component({
       // 在组件实例进入页面节点树时执行
       // console.log("attached", this.data);
       const sysInfo = getSystemInfo();
-      const { contentWidth, contentHeight, pixelRatio } = sysInfo;
+      const { contentWidth, contentHeight, pixelRatio, customBar } = sysInfo;
       this.setData({
         _contentWidth: contentWidth,
         _contentHeight: contentHeight,
-        _pixelRatio: pixelRatio
+        _pixelRatio: pixelRatio,
+        _customBar: customBar
       });
       // 节流处理，提升性能
-      this.throttleTouchMove = throttle(this.touchMove, 5);
+      this.throttlePressMove = throttle(this.pressMove.bind(this), 10);
+
+      new _Touch(this, "touchInit", {
+        //会创建this.touch1指向实例对象
+        touchStart: () => {},
+        touchMove: () => {},
+        touchEnd: () => {},
+        touchCancel: () => {},
+        //一个手指以上触摸屏幕触发
+        multipointStart: () => {
+          console.log("multipointStart");
+        },
+        //当手指离开，屏幕只剩一个手指或零个手指触发(一开始只有一根手指也会触发)
+        multipointEnd: () => {
+          console.log("multipointEnd");
+        },
+        //点按触发，覆盖下方3个点击事件，doubleTap时触发2次
+        tap: () => {
+          console.log("Tap");
+        },
+        //双击屏幕触发
+        doubleTap: () => {
+          // console.log("doubleTap");
+          const { _imageScale, _currentImgs } = this.data;
+          this.setData({
+            _imageScale: _imageScale === 1 ? 2 : 1,
+            _currentImgs: _currentImgs.map((v) => ({
+              ...v,
+              imageX: v.orgImageX,
+              imageY: v.orgImageY,
+            })),
+          });
+        },
+        //长按屏幕750ms触发
+        longTap: () => {
+          console.log("longTap");
+        },
+        //单击屏幕触发，包括长按
+        singleTap: () => {
+          console.log("singleTap");
+        },
+        //evt.angle代表两个手指旋转的角度
+        rotate: (evt) => {
+          // console.log("rotate:" + evt.angle);
+        },
+        //evt.zoom代表两个手指缩放的比例(多次缩放的累计值),evt.singleZoom代表单次回调中两个手指缩放的比例
+        pinch: (evt) => {
+          console.log("pinch:" + evt.zoom);
+          let scale = evt.zoom;
+          if(scale >= MAX_SCALE) {
+            scale = MAX_SCALE
+          }else if(scale <= MIN_SCALE) {
+            scale = MIN_SCALE
+          }
+          // console.log('scale', scale);
+          // 根据实际的缩放量，重置累计值
+          this.touchInit.tempZoom = scale;
+          console.log('scale', scale);
+          this.setData({ _imageScale: scale });
+        },
+        //evt.deltaX和evt.deltaY代表在屏幕上移动的距离,evt.target可以用来判断点击的对象
+        pressMove: this.throttlePressMove,
+        swipe: (evt) => {
+          //在touch结束触发，evt.direction代表滑动的方向 ['Up','Right','Down','Left']
+          console.log("swipe:" + evt.direction);
+          const { _currentCount, _currentImgs, _imageScale } = this.data;
+          let current = 0;
+          switch (evt.direction) {
+            // 左滑页面
+            case "Left":
+              current = _currentCount + 1;
+              if (current < _currentImgs.length && _imageScale === 1) {
+                this.setData({
+                  _currentImgs: _currentImgs.map((v) =>
+                    v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
+                      ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
+                      : v
+                  ),
+                  _currentCount: _currentCount + 1,
+                  _imageScale: 1,
+                });
+              }
+              break;
+            // 右滑页面
+            case "Right":
+              current = _currentCount - 1;
+              if (current >= 0 && _imageScale === 1) {
+                this.setData({
+                  _currentImgs: _currentImgs.map((v) =>
+                    v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
+                      ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
+                      : v
+                  ),
+                  _currentCount: current,
+                  _imageScale: 1,
+                });
+              }
+              break;
+            default:
+              break;
+          }
+        },
+      });
     },
     ready() {
       // console.log('ready');
@@ -114,6 +223,90 @@ Component({
    * 组件的方法列表
    */
   methods: {
+    pressMove(evt) {
+      const { _currentCount, _currentImgs, _imageScale, _contentWidth, _contentHeight, _customBar } = this.data;
+      let img_width = _currentImgs[_currentCount].width * _imageScale;
+      let img_height = _currentImgs[_currentCount].height * _imageScale;
+      const imageX = _currentImgs[_currentCount].imageX;
+      const imageY = _currentImgs[_currentCount].imageY;
+      let translateX = imageX + evt.deltaX * _imageScale + 10;
+      let translateY = imageY + evt.deltaY * _imageScale + 10;
+      // if (_imageScale === 1) {
+
+      // } else 
+      if (_imageScale > 1) {
+
+        // 图片大于画布宽度才可左右拖动
+        if(img_width > _contentWidth) {
+          // 左边界
+          const _l = (img_width - _contentWidth) / 2 + _currentImgs[_currentCount].orgImageX;
+          // 右边界
+          const _r = (img_width - _contentWidth) / 2 - _currentImgs[_currentCount].orgImageX;
+          // console.log('translateX', translateX);
+          console.log('translateX', translateX);
+          console.log('_l', _l);
+          console.log('_r', _r);
+          if(translateX >= _l) {
+            _currentImgs[_currentCount].imageX = _l;
+            
+          }else if(_r + translateX <= 0) {
+            _currentImgs[_currentCount].imageX = -_r;
+            
+          }else {
+            _currentImgs[_currentCount].imageX = translateX;
+            
+          }
+
+        }
+
+        // 图片高度大于画布高度才可上下拖动
+        if(img_height > _contentHeight) {
+          // 顶部边界
+          const _t = (img_height - _contentHeight) / 2 + _currentImgs[_currentCount].orgImageY;
+          // _currentImgs[_currentCount].imageY = translateY;
+          if(translateY === _t) {
+            console.log('translateY === _t', _t);
+          }if(translateY > _t) {
+            _currentImgs[_currentCount].imageY = _t;
+          }else {
+            _currentImgs[_currentCount].imageY = translateY;
+          }
+
+        }
+        
+        
+        
+        // _currentImgs[_currentCount].imageX = translateX + evt.deltaX;
+
+
+
+
+
+
+        // console.log('translateY', translateY);
+        // console.log('_t', _t);
+        // if(translateY <= _t && _currentImgs[_currentCount].height * _imageScale > _contentHeight) {
+        //   _currentImgs[_currentCount].imageY = _t;
+        // }else {
+        //   _currentImgs[_currentCount].imageY = translateY + evt.deltaY;
+        // }
+
+        this.setData({
+          _currentImgs,
+        });
+
+        // console.log('_contentWidth', _contentWidth);
+
+        // console.log('_currentImgs[_currentCount].imageX', _currentImgs[_currentCount].imageX);
+
+        // console.log('translateX', translateX);
+        // console.log((_contentWidth - (_currentImgs[_currentCount].imageX / _imageScale)));
+      }
+      // console.log(evt);
+      // console.log(evt.target);
+      // console.log('evt.deltaX', evt.deltaX);
+      // console.log('evt.deltaY', evt.deltaY);
+    },
     // 获取图片信息
     async getImgInfo(currentCount, currentImgs) {
       let _currentImgs = [...currentImgs];
@@ -166,77 +359,6 @@ Component({
           },
         });
       });
-    },
-
-    /** 手势处理 */
-    // 触摸开始事件
-    touchStart (e) {
-      touchStartX = e.touches[0].pageX; // 获取触摸时的原点
-      touchStartY = e.touches[0].pageY; // 获取触摸时的原点
-      // 使用js计时器记录时间
-      interval = setInterval(function () {
-        time++;
-      }, 100);
-    },
-    // 触摸移动事件
-    touchMove (e) {
-      touchMoveX = e.touches[0].pageX;
-      touchMoveY = e.touches[0].pageY;
-    },
-    // 触摸结束事件
-    touchEnd (e) {
-      var moveX = touchMoveX - touchStartX;
-      var moveY = touchMoveY - touchStartY;
-      if (Math.sign(moveX) == -1) {
-        moveX = moveX * -1;
-      }
-      if (Math.sign(moveY) == -1) {
-        moveY = moveY * -1;
-      }
-      if (moveX <= moveY) {
-        // 上下
-        // 向上滑动
-        if (touchMoveY - touchStartY <= -30 && time < 10) {
-          console.log("向上滑动");
-        }
-        // 向下滑动
-        if (touchMoveY - touchStartY >= 30 && time < 10) {
-          console.log("向下滑动 ");
-        }
-      } else {
-        console.log('touchMoveX - touchStartX' ,touchMoveX - touchStartX, touchMoveX, touchStartX);
-        console.log('time' ,time);
-        // 左右
-        // 向左滑动
-        if (touchMoveX - touchStartX <= -30 && time < 10) {
-          console.log("左滑页面");
-          const { _currentImgs, _currentCount } = this.data;
-          const current = _currentCount + 1;
-          if(current < _currentImgs.length) {
-            this.setData({ 
-              _currentCount: _currentCount + 1,
-              _imageScale: 1
-            });
-          }
-          
-        }
-        // 向右滑动
-        if (touchMoveX - touchStartX >= 30 && time < 10) {
-          console.log("向右滑动");
-          const { _currentCount } = this.data;
-          const current = _currentCount - 1;
-          if(current >= 0) {
-            this.setData({ 
-              _currentCount: current,
-              // currentImgs: _currentImgs,
-              _imageScale: 1
-            });
-          }
-
-        }
-      }
-      clearInterval(interval); // 清除setInterval
-      time = 0;
     },
   },
 });

@@ -10,10 +10,11 @@ export const  getSystemInfo = () => {
     // 获取画布属性
     const sysInfo = wx.getSystemInfoSync();
     let capsule = wx.getMenuButtonBoundingClientRect ? wx.getMenuButtonBoundingClientRect() : null;
+    const customBar = capsule.bottom + capsule.top - (sysInfo.statusBarHeight || 0);
     return {
       contentWidth: sysInfo.windowWidth,
       contentHeight: sysInfo.windowHeight,
-      customBar: capsule.bottom + capsule.top - (sysInfo.statusBarHeight || 0),
+      customBar,
       ...sysInfo
     }
 }
