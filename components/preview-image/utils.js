@@ -13,7 +13,8 @@ export const  getSystemInfo = () => {
     return {
       contentWidth: sysInfo.windowWidth,
       contentHeight: sysInfo.windowHeight,
-      customBar: capsule.bottom + capsule.top - (sysInfo.statusBarHeight || 0)
+      customBar: capsule.bottom + capsule.top - (sysInfo.statusBarHeight || 0),
+      ...sysInfo
     }
 }
 
@@ -34,13 +35,13 @@ export function debounce(fn, interval) {
 
 /****** 图片在图片框内按宽高比例自动缩放 ***/
 export function AutoSize(image, maxWidth, maxHeight) {
-  // console.log(image);
   let img = {};
   // 当图片比图片框小时不做任何改变
   if (image.width < maxWidth && image.height < maxHeight) {
     img.width = image.width;
     img.height = image.height;
   } else {
+    /*
     //原图片宽高比例 大于 图片框宽高比例,则以框的宽为标准缩放，反之以框的高为标准缩放
     if (maxWidth / maxHeight <= image.width / image.height) {
       //原图片宽高比例 大于 图片框宽高比例
@@ -51,6 +52,9 @@ export function AutoSize(image, maxWidth, maxHeight) {
       img.width = maxHeight * (image.width / image.height);
       img.height = maxHeight; //以框的高度为标准
     }
+    */
+   img.width = maxWidth; //以框的宽度为标准
+   img.height = maxWidth * (image.height / image.width);
   }
   return img;
 }

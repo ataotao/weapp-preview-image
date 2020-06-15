@@ -47,12 +47,12 @@ Page({
     this.setData({
       galleryShow: true,
       galleryImgs: [
-        { src: 'https://desk-fd.zol-img.com.cn/g5/M00/02/05/ChMkJ1bKyZmIWCwZABEwe5zfvyMAALIQABa1z4AETCT730.jpg', title: '1' },
         { src: 'https://article-fd.zol-img.com.cn/t_s375x666_w1/g3/M0A/0B/0F/ChMlV17h4JmIPlMEAAFsoFmuxowAAUpPQAKjkoAAWy4316.jpg', title: "2" },
+        { src: 'https://desk-fd.zol-img.com.cn/g5/M00/02/05/ChMkJ1bKyZmIWCwZABEwe5zfvyMAALIQABa1z4AETCT730.jpg', title: '1' },
         { src: 'https://desk-fd.zol-img.com.cn/t_s960x600c5/g3/M07/0C/08/ChMlWF7jI-OIZXGUACXN6Zt4lq4AAUrhgNV3PUAJc4B223.jpg', title: "3" }
       ],
       galleryCurrent: 0
     })
   }
- 
+
 })

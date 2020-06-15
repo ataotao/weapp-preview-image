@@ -11,7 +11,7 @@
     "navigationBarTextStyle": "black"
   },
   "usingComponents": {
-    "mp-gallery": "/components/gallery/gallery",
+    "mp-gallery": "/components/gallery-custom/gallery-custom",
     "preview-image": "/components/preview-image/preview-image"
   },
   "style": "v2",

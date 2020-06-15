@@ -20,13 +20,13 @@
 }
 .preview-image-loading{
   width: 100vw;
-  height: 80vh;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .preview-image-loading .rotate {
-  color: #fff;
+  color: #cccccc;
   font-size: 30rpx;
 }
 .preview-image-list{
@@ -39,9 +39,8 @@
 .preview-image-item{
   width: 100%;
   height: 100vh;
-  overflow: hidden;
-
 }
+
 
 /* 在 Chrome and Safari中，当我们使用CSS transforms 或者 animations时可能会有页面闪烁的效果，下面的代码可以修复此情况： */
 .tran {  
