@@ -7,7 +7,7 @@ let interval = ""; // 记录/清理时间记录
 let touchMoveX = 0; // x轴方向移动的距离
 let touchMoveY = 0; // y轴方向移动的距离
 let hypotenuseLength = 0; // 双指触摸时斜边长度
-let operateType = null; // 移动/拖动类型 move | zoom | doubleClick
+let operateType = null; // 移动/拖动类型 move | zoom
 let lastTapTime = 0; // 双击判断
 const MIN_SCALE = 1; // 最小缩放值
 const MAX_SCALE = 2; // 最大缩放值
@@ -103,10 +103,10 @@ Component({
         _contentWidth: contentWidth,
         _contentHeight: contentHeight,
         _pixelRatio: pixelRatio,
-        _customBar: customBar
+        _customBar: customBar,
       });
       // 节流处理，提升性能
-      this.throttlePressMove = throttle(this.pressMove.bind(this), 10);
+      this.throttlePressMove = throttle(this.pressMove.bind(this), 5);
 
       new _Touch(this, "touchInit", {
         //会创建this.touch1指向实例对象
@@ -131,7 +131,7 @@ Component({
           // console.log("doubleTap");
           const { _imageScale, _currentImgs } = this.data;
           this.setData({
-            _imageScale: _imageScale === 1 ? 2 : 1,
+            _imageScale: _imageScale > MIN_SCALE ? MIN_SCALE : MAX_SCALE,
             _currentImgs: _currentImgs.map((v) => ({
               ...v,
               imageX: v.orgImageX,
@@ -154,17 +154,30 @@ Component({
         //evt.zoom代表两个手指缩放的比例(多次缩放的累计值),evt.singleZoom代表单次回调中两个手指缩放的比例
         pinch: (evt) => {
           console.log("pinch:" + evt.zoom);
+          const { _currentImgs } = this.data;
           let scale = evt.zoom;
-          if(scale >= MAX_SCALE) {
-            scale = MAX_SCALE
-          }else if(scale <= MIN_SCALE) {
-            scale = MIN_SCALE
+          if (scale >= MAX_SCALE) {
+            scale = MAX_SCALE;
+          } else if (scale <= MIN_SCALE) {
+            scale = MIN_SCALE;
           }
+
           // console.log('scale', scale);
           // 根据实际的缩放量，重置累计值
           this.touchInit.tempZoom = scale;
-          console.log('scale', scale);
-          this.setData({ _imageScale: scale });
+          console.log("scale", scale);
+          let obj = {
+            _imageScale: scale,
+          };
+          if (scale === 1) {
+            // 重置中心轴
+            obj._currentImgs = _currentImgs.map((v) =>
+              v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
+                ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
+                : v
+            );
+          }
+          this.setData(obj);
         },
         //evt.deltaX和evt.deltaY代表在屏幕上移动的距离,evt.target可以用来判断点击的对象
         pressMove: this.throttlePressMove,
@@ -177,31 +190,41 @@ Component({
             // 左滑页面
             case "Left":
               current = _currentCount + 1;
-              if (current < _currentImgs.length && _imageScale === 1) {
-                this.setData({
-                  _currentImgs: _currentImgs.map((v) =>
-                    v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
-                      ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
-                      : v
-                  ),
-                  _currentCount: _currentCount + 1,
-                  _imageScale: 1,
-                });
+              if (current < _currentImgs.length) {
+                if (operateType === "move" || _imageScale === 1) {
+                  console.log('Left operateType === "move" || _imageScale === 1');
+                  this.setData({
+                    _currentImgs: _currentImgs.map((v) =>
+                      v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
+                        ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
+                        : v
+                    ),
+                    _currentCount: _currentCount + 1,
+                    _imageScale: 1,
+                  }, () => {
+                    operateType = null;
+                  });
+                }
               }
               break;
             // 右滑页面
             case "Right":
               current = _currentCount - 1;
-              if (current >= 0 && _imageScale === 1) {
-                this.setData({
-                  _currentImgs: _currentImgs.map((v) =>
-                    v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
-                      ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
-                      : v
-                  ),
-                  _currentCount: current,
-                  _imageScale: 1,
-                });
+              if (current >= 0) {
+                if (operateType === "move" || _imageScale === 1) {
+                  console.log('Right operateType === "move" || _imageScale === 1');
+                  this.setData({
+                    _currentImgs: _currentImgs.map((v) =>
+                      v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
+                        ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
+                        : v
+                    ),
+                    _currentCount: current,
+                    _imageScale: 1,
+                  }, () => {
+                    operateType = null;
+                  });
+                }
               }
               break;
             default:
@@ -224,88 +247,66 @@ Component({
    */
   methods: {
     pressMove(evt) {
-      const { _currentCount, _currentImgs, _imageScale, _contentWidth, _contentHeight, _customBar } = this.data;
+      const {
+        _currentCount,
+        _currentImgs,
+        _imageScale,
+        _contentWidth,
+        _contentHeight,
+        _customBar,
+      } = this.data;
       let img_width = _currentImgs[_currentCount].width * _imageScale;
       let img_height = _currentImgs[_currentCount].height * _imageScale;
       const imageX = _currentImgs[_currentCount].imageX;
       const imageY = _currentImgs[_currentCount].imageY;
       let translateX = imageX + evt.deltaX * _imageScale + 10;
       let translateY = imageY + evt.deltaY * _imageScale + 10;
-      // if (_imageScale === 1) {
-
-      // } else 
+      operateType = null;
       if (_imageScale > 1) {
-
         // 图片大于画布宽度才可左右拖动
-        if(img_width > _contentWidth) {
+        if (img_width > _contentWidth) {
           // 左边界
-          const _l = (img_width - _contentWidth) / 2 + _currentImgs[_currentCount].orgImageX;
+          const _l =
+            (img_width - _contentWidth) / 2 +
+            _currentImgs[_currentCount].orgImageX;
           // 右边界
-          const _r = (img_width - _contentWidth) / 2 - _currentImgs[_currentCount].orgImageX;
-          // console.log('translateX', translateX);
-          console.log('translateX', translateX);
-          console.log('_l', _l);
-          console.log('_r', _r);
-          if(translateX >= _l) {
+          const _r =
+            (img_width - _contentWidth) / 2 -
+            _currentImgs[_currentCount].orgImageX;
+          if (translateX >= _l) {
+            console.log('translateX >= _l');
             _currentImgs[_currentCount].imageX = _l;
-            
-          }else if(_r + translateX <= 0) {
+            operateType = "move";
+          } else if (_r + translateX <= 0) {
+            console.log('_r + translateX <= 0');
+            operateType = "move";
             _currentImgs[_currentCount].imageX = -_r;
-            
-          }else {
+          } else {
             _currentImgs[_currentCount].imageX = translateX;
-            
           }
-
         }
 
         // 图片高度大于画布高度才可上下拖动
-        if(img_height > _contentHeight) {
+        if (img_height > _contentHeight) {
           // 顶部边界
-          const _t = (img_height - _contentHeight) / 2 + _currentImgs[_currentCount].orgImageY;
-          // _currentImgs[_currentCount].imageY = translateY;
-          if(translateY === _t) {
-            console.log('translateY === _t', _t);
-          }if(translateY > _t) {
+          const _t =
+            (img_height - _contentHeight) / 2 +
+            _currentImgs[_currentCount].orgImageY;
+          const _b =
+            (img_height - _contentHeight) / 2 -
+            _currentImgs[_currentCount].orgImageY;
+          if (translateY >= _t) {
             _currentImgs[_currentCount].imageY = _t;
-          }else {
+          } else if (_b + translateY <= 0) {
+            _currentImgs[_currentCount].imageY = -_b;
+          } else {
             _currentImgs[_currentCount].imageY = translateY;
           }
-
         }
-        
-        
-        
-        // _currentImgs[_currentCount].imageX = translateX + evt.deltaX;
-
-
-
-
-
-
-        // console.log('translateY', translateY);
-        // console.log('_t', _t);
-        // if(translateY <= _t && _currentImgs[_currentCount].height * _imageScale > _contentHeight) {
-        //   _currentImgs[_currentCount].imageY = _t;
-        // }else {
-        //   _currentImgs[_currentCount].imageY = translateY + evt.deltaY;
-        // }
-
         this.setData({
           _currentImgs,
         });
-
-        // console.log('_contentWidth', _contentWidth);
-
-        // console.log('_currentImgs[_currentCount].imageX', _currentImgs[_currentCount].imageX);
-
-        // console.log('translateX', translateX);
-        // console.log((_contentWidth - (_currentImgs[_currentCount].imageX / _imageScale)));
       }
-      // console.log(evt);
-      // console.log(evt.target);
-      // console.log('evt.deltaX', evt.deltaX);
-      // console.log('evt.deltaY', evt.deltaY);
     },
     // 获取图片信息
     async getImgInfo(currentCount, currentImgs) {
