@@ -116,15 +116,15 @@ Component({
         touchCancel: () => {},
         //一个手指以上触摸屏幕触发
         multipointStart: () => {
-          console.log("multipointStart");
+          // console.log("multipointStart");
         },
         //当手指离开，屏幕只剩一个手指或零个手指触发(一开始只有一根手指也会触发)
         multipointEnd: () => {
-          console.log("multipointEnd");
+          // console.log("multipointEnd");
         },
         //点按触发，覆盖下方3个点击事件，doubleTap时触发2次
         tap: () => {
-          console.log("Tap");
+          // console.log("Tap");
         },
         //双击屏幕触发
         doubleTap: () => {
@@ -141,11 +141,11 @@ Component({
         },
         //长按屏幕750ms触发
         longTap: () => {
-          console.log("longTap");
+          // console.log("longTap");
         },
         //单击屏幕触发，包括长按
         singleTap: () => {
-          console.log("singleTap");
+          // console.log("singleTap");
         },
         //evt.angle代表两个手指旋转的角度
         rotate: (evt) => {
@@ -153,7 +153,7 @@ Component({
         },
         //evt.zoom代表两个手指缩放的比例(多次缩放的累计值),evt.singleZoom代表单次回调中两个手指缩放的比例
         pinch: (evt) => {
-          console.log("pinch:" + evt.zoom);
+          // console.log("pinch:" + evt.zoom);
           const { _currentImgs } = this.data;
           let scale = evt.zoom;
           if (scale >= MAX_SCALE) {
@@ -165,7 +165,7 @@ Component({
           // console.log('scale', scale);
           // 根据实际的缩放量，重置累计值
           this.touchInit.tempZoom = scale;
-          console.log("scale", scale);
+          // console.log("scale", scale);
           let obj = {
             _imageScale: scale,
           };
@@ -191,8 +191,8 @@ Component({
             case "Left":
               current = _currentCount + 1;
               if (current < _currentImgs.length) {
-                if (operateType === "move" || _imageScale === 1) {
-                  console.log('Left operateType === "move" || _imageScale === 1');
+                if (operateType === 'move' || _imageScale === 1) {
+                  console.log('Left operateType === move || _imageScale === 1');
                   this.setData({
                     _currentImgs: _currentImgs.map((v) =>
                       v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
@@ -211,8 +211,8 @@ Component({
             case "Right":
               current = _currentCount - 1;
               if (current >= 0) {
-                if (operateType === "move" || _imageScale === 1) {
-                  console.log('Right operateType === "move" || _imageScale === 1');
+                if (operateType === 'move' || _imageScale === 1) {
+                  console.log('Right operateType === move || _imageScale === 1');
                   this.setData({
                     _currentImgs: _currentImgs.map((v) =>
                       v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
@@ -276,10 +276,10 @@ Component({
           if (translateX >= _l) {
             console.log('translateX >= _l');
             _currentImgs[_currentCount].imageX = _l;
-            operateType = "move";
+            operateType = 'move';
           } else if (_r + translateX <= 0) {
             console.log('_r + translateX <= 0');
-            operateType = "move";
+            operateType = 'move';
             _currentImgs[_currentCount].imageX = -_r;
           } else {
             _currentImgs[_currentCount].imageX = translateX;
@@ -361,5 +361,12 @@ Component({
         });
       });
     },
+
+    // 关闭图片预览
+    hideGallery() {
+      this.setData({
+        show: false
+      });
+    }
   },
 });

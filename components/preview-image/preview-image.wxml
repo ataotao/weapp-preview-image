@@ -22,3 +22,10 @@
     </view>
   </view>
 </view>
+
+  <!-- 文字 -->
+  <view class="preview-image-head">
+    <view class="preview-image-current">{{_currentCount}}/{{_currentImgs.length}}</view>
+    <view class="preview-image-close" bind:tap="hideGallery"></view>
+  </view>
+  <view class="preview-image-title">{{_currentImgs[_currentCount].title}}</view>
