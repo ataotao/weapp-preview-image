@@ -1,5 +1,6 @@
 const app = getApp();
 import _Touch from "/touch";
+import { throttle, AutoSize, getSystemInfo } from "./utils";
 let touchStartX = 0; //触摸时的原点
 let touchStartY = 0; //触摸时的原点
 let time = 0; // 时间记录，用于滑动时且时间小于1s则执行左右滑动
@@ -12,7 +13,17 @@ let lastTapTime = 0; // 双击判断
 const MIN_SCALE = 1; // 最小缩放值
 const MAX_SCALE = 2; // 最大缩放值
 
-import { throttle, debounce, AutoSize, getSystemInfo } from "./utils";
+const initData = {
+  _currentImgs: [],
+  _currentShow: false,
+  _currentCount: 0,
+  _isLoading: false,
+  _contentWidth: 0,
+  _contentHeight: 0,
+  _imageScale: 1,
+  _arrowVisible: false,
+};
+
 Component({
   options: {
     addGlobalClass: true,
@@ -25,25 +36,6 @@ Component({
       type: Array,
       value: [],
       observer(newVal = []) {
-        const sysInfo = getSystemInfo();
-        const { contentWidth, contentHeight, customBar } = sysInfo;
-        console.log(sysInfo);
-        // this.setData({ _isLoading: true });
-        // console.log(11);
-
-        // this.setData({
-        //   _currentImgs: newVal.map(v => {
-        //     return {
-        //       ...v,
-        //       imageX: (contentWidth) / 2,
-        //       imageY: (contentHeight + customBar) / 2,
-        //       orgImageX: (contentWidth) / 2,
-        //       orgImageY: (contentHeight + customBar) / 2
-        //     }
-        //   })
-        // }, () => {
-        //   this.setData({ _isLoading: false });
-        // });
         // 获取图片信息
         this.getImgInfo(this.properties._currentCount, newVal);
       },
@@ -67,15 +59,7 @@ Component({
   /**
    * 组件的初始数据
    */
-  data: {
-    _currentImgs: [],
-    _currentShow: false,
-    _currentCount: 0,
-    _isLoading: false,
-    _contentWidth: 0,
-    _contentHeight: 0,
-    _imageScale: 1,
-  },
+  data: initData,
 
   // 计算属性
   observers: {
@@ -106,11 +90,15 @@ Component({
         _customBar: customBar,
       });
       // 节流处理，提升性能
-      this.throttlePressMove = throttle(this.pressMove.bind(this), 5);
+      this.throttlePressMove = throttle(this.pressMove.bind(this), 20);
 
       new _Touch(this, "touchInit", {
         //会创建this.touch1指向实例对象
-        touchStart: () => {},
+        touchStart: (evt) => {
+          touchStartX = evt.touches[0].pageX; // 获取触摸时的原点
+          touchStartY = evt.touches[0].pageY; // 获取触摸时的原点
+          // console.log(touchStartX);
+        },
         touchMove: () => {},
         touchEnd: () => {},
         touchCancel: () => {},
@@ -125,6 +113,10 @@ Component({
         //点按触发，覆盖下方3个点击事件，doubleTap时触发2次
         tap: () => {
           // console.log("Tap");
+          // 左右箭头显示状态
+          this.setData({
+            _arrowVisible: !this.data._arrowVisible,
+          });
         },
         //双击屏幕触发
         doubleTap: () => {
@@ -171,11 +163,7 @@ Component({
           };
           if (scale === 1) {
             // 重置中心轴
-            obj._currentImgs = _currentImgs.map((v) =>
-              v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
-                ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
-                : v
-            );
+            obj._currentImgs = _currentImgs.map((v) => (v.imageX !== v.orgImageX || v.imageY !== v.orgImageY ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY } : v));
           }
           this.setData(obj);
         },
@@ -191,19 +179,19 @@ Component({
             case "Left":
               current = _currentCount + 1;
               if (current < _currentImgs.length) {
-                if (operateType === 'move' || _imageScale === 1) {
-                  console.log('Left operateType === move || _imageScale === 1');
-                  this.setData({
-                    _currentImgs: _currentImgs.map((v) =>
-                      v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
-                        ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
-                        : v
-                    ),
-                    _currentCount: _currentCount + 1,
-                    _imageScale: 1,
-                  }, () => {
-                    operateType = null;
-                  });
+                if ((operateType === "move" && _currentImgs[_currentCount].isEdeg) || _imageScale === 1) {
+                  console.log("Left operateType === move || _imageScale === 1");
+                  this.setData(
+                    {
+                      _currentImgs: _currentImgs.map((v) => (v.imageX !== v.orgImageX || v.imageY !== v.orgImageY ? { ...v, isEdeg: false, imageX: v.orgImageX, imageY: v.orgImageY } : v)),
+                      _currentCount: _currentCount + 1,
+                      _imageScale: 1,
+                      isEdeg: false
+                    },
+                    () => {
+                      operateType = null;
+                    }
+                  );
                 }
               }
               break;
@@ -211,19 +199,18 @@ Component({
             case "Right":
               current = _currentCount - 1;
               if (current >= 0) {
-                if (operateType === 'move' || _imageScale === 1) {
-                  console.log('Right operateType === move || _imageScale === 1');
-                  this.setData({
-                    _currentImgs: _currentImgs.map((v) =>
-                      v.imageX !== v.orgImageX || v.imageY !== v.orgImageY
-                        ? { ...v, imageX: v.orgImageX, imageY: v.orgImageY }
-                        : v
-                    ),
-                    _currentCount: current,
-                    _imageScale: 1,
-                  }, () => {
-                    operateType = null;
-                  });
+                if ((operateType === "move" && _currentImgs[_currentCount].isEdeg) || _imageScale === 1) {
+                  console.log("Right operateType === move || _imageScale === 1");
+                  this.setData(
+                    {
+                      _currentImgs: _currentImgs.map((v) => (v.imageX !== v.orgImageX || v.imageY !== v.orgImageY ? { ...v, isEdeg: false, imageX: v.orgImageX, imageY: v.orgImageY } : v)),
+                      _currentCount: current,
+                      _imageScale: 1
+                    },
+                    () => {
+                      operateType = null;
+                    }
+                  );
                 }
               }
               break;
@@ -247,66 +234,64 @@ Component({
    */
   methods: {
     pressMove(evt) {
-      const {
-        _currentCount,
-        _currentImgs,
-        _imageScale,
-        _contentWidth,
-        _contentHeight,
-        _customBar,
-      } = this.data;
+      touchMoveX = evt.touches[0].pageX;
+      touchMoveY = evt.touches[0].pageY;
+      const { _currentCount, _currentImgs, _imageScale, _contentWidth, _contentHeight } = this.data;
       let img_width = _currentImgs[_currentCount].width * _imageScale;
       let img_height = _currentImgs[_currentCount].height * _imageScale;
-      const imageX = _currentImgs[_currentCount].imageX;
-      const imageY = _currentImgs[_currentCount].imageY;
-      let translateX = imageX + evt.deltaX * _imageScale + 10;
-      let translateY = imageY + evt.deltaY * _imageScale + 10;
+      let translateX = -(touchStartX - touchMoveX) + _currentImgs[_currentCount].imageX;
+      let translateY = -(touchStartY - touchMoveY) + _currentImgs[_currentCount].imageY;
+      touchStartX = touchMoveX;
+      touchStartY = touchMoveY;
       operateType = null;
       if (_imageScale > 1) {
         // 图片大于画布宽度才可左右拖动
         if (img_width > _contentWidth) {
           // 左边界
-          const _l =
-            (img_width - _contentWidth) / 2 +
-            _currentImgs[_currentCount].orgImageX;
+          const _l = (img_width - _contentWidth) / 2 + _currentImgs[_currentCount].orgImageX;
           // 右边界
-          const _r =
-            (img_width - _contentWidth) / 2 -
-            _currentImgs[_currentCount].orgImageX;
+          const _r = (img_width - _contentWidth) / 2 - _currentImgs[_currentCount].orgImageX;
           if (translateX >= _l) {
-            console.log('translateX >= _l');
+            // console.log("translateX >= _l", _l);
             _currentImgs[_currentCount].imageX = _l;
-            operateType = 'move';
+            if(translateX >= _l + 20) {
+              _currentImgs[_currentCount].isEdeg = true;
+            }
+            operateType = "move";
           } else if (_r + translateX <= 0) {
-            console.log('_r + translateX <= 0');
-            operateType = 'move';
+            // console.log("_r + translateX <= 0", _r);
             _currentImgs[_currentCount].imageX = -_r;
+            if(_r + translateX <= 20) {
+              _currentImgs[_currentCount].isEdeg = true;
+            }
+            operateType = "move";
           } else {
             _currentImgs[_currentCount].imageX = translateX;
+            // console.log('translateX', translateX);
           }
+          // console.log('_currentImgs[_currentCount].imageX', _currentImgs[_currentCount].imageX);
         }
 
         // 图片高度大于画布高度才可上下拖动
         if (img_height > _contentHeight) {
           // 顶部边界
-          const _t =
-            (img_height - _contentHeight) / 2 +
-            _currentImgs[_currentCount].orgImageY;
-          const _b =
-            (img_height - _contentHeight) / 2 -
-            _currentImgs[_currentCount].orgImageY;
+          const _t = (img_height - _contentHeight) / 2 + _currentImgs[_currentCount].orgImageY;
+          const _b = (img_height - _contentHeight) / 2 - _currentImgs[_currentCount].orgImageY;
           if (translateY >= _t) {
             _currentImgs[_currentCount].imageY = _t;
           } else if (_b + translateY <= 0) {
             _currentImgs[_currentCount].imageY = -_b;
           } else {
             _currentImgs[_currentCount].imageY = translateY;
+            // console.log('translateY', translateY);
           }
         }
         this.setData({
           _currentImgs,
         });
+        // console.log(_currentImgs[0]);
       }
+
     },
     // 获取图片信息
     async getImgInfo(currentCount, currentImgs) {
@@ -365,8 +350,30 @@ Component({
     // 关闭图片预览
     hideGallery() {
       this.setData({
-        show: false
+        show: false,
+        _currentCount: 0,
+        _imageScale: 1,
       });
-    }
+    },
+
+    /** 左右箭头 */
+    onTapArrowLeft() {
+      const { _currentCount } = this.data;
+      this.setData({
+        _currentCount: _currentCount > 0 ? _currentCount - 1 : 0,
+        _imageScale: 1,
+      });
+    },
+
+    onTapArrowRight() {
+      const { _currentCount, _currentImgs } = this.data;
+      const len = _currentImgs.length;
+      const count = _currentCount + 1;
+      this.setData({
+        _currentCount: count >= len ? len - 1 : count,
+        _imageScale: 1,
+      });
+    },
+    /** 左右箭头 */
   },
 });

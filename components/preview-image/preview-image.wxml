@@ -12,7 +12,7 @@
 </view> -->
 
 <!-- <view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" bind:touchstart="touchStart" bind:touchmove="throttleTouchMove" bind:touchend="touchEnd" bind:tap="doubleClick"> -->
-<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" catch:touchstart="touchInit.start" catch:touchmove="touchInit.move" catch:touchend="touchInit.end" catch:tap="touchInit.cancel">
+<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" catch:touchstart="touchInit.start" catch:touchmove="touchInit.move" catch:touchend="touchInit.end" catch:tap="touchInit.cancel" style="background-color: {{_imageScale < 1 ? 'rgba(0,0,0,0.6)' : '#000'}}">
   <view class="preview-image-list" style="transform: translate(-{{_currentCount * _contentWidth}}px, 0); width: {{_contentWidth * _currentImgs.length}}px;">
     <view class="preview-image-item tran" wx:for="{{_currentImgs}}" wx:key="src">
       <view class="preview-image-loading" hidden="{{!_isLoading}}">
@@ -23,9 +23,14 @@
   </view>
 </view>
 
+<block wx:if="{{_currentShow}}">
   <!-- 文字 -->
   <view class="preview-image-head">
-    <view class="preview-image-current">{{_currentCount}}/{{_currentImgs.length}}</view>
+    <view class="preview-image-current">{{_currentCount + 1}}/{{_currentImgs.length}}</view>
     <view class="preview-image-close" bind:tap="hideGallery"></view>
   </view>
+  <!-- 左右箭头 -->
+  <view class="preview-arrow preview-arrow-left {{_arrowVisible ? 'show' : 'hide'}}" bind:tap="onTapArrowLeft"></view>
+  <view class="preview-arrow preview-arrow-right {{_arrowVisible ? 'show' : 'hide'}}" bind:tap="onTapArrowRight"></view>
   <view class="preview-image-title">{{_currentImgs[_currentCount].title}}</view>
+</block>

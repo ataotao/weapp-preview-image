@@ -103,3 +103,35 @@
   transform: translate3d(0,0,0);
   /* Other transform properties here */
 }
+
+.preview-arrow{
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 50rpx;
+  height: 80rpx;
+  width: 80rpx;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  position: absolute;
+  top: calc(50vh - 50px);
+  z-index: 9999;
+}
+.preview-arrow-left{
+  left: 20rpx;
+}
+.preview-arrow-left::after{
+  content: '‹';
+}
+.preview-arrow-right{
+  right: 20rpx;
+}
+.preview-arrow-right::after{
+  content: '›';
+}
+.show{
+  display: block;
+}
+.hide{
+  display: none;
+}

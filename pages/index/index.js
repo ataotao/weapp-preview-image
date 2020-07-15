@@ -57,6 +57,31 @@ Page({
       ],
       galleryCurrent: 0
     })
-  }
+  },
+
+  onTap1() {
+    this.setData({
+      galleryShow: true,
+      galleryImgs: [
+      { src: 'http://desk-fd.zol-img.com.cn/g5/M00/02/05/ChMkJ1bKyZmIWCwZABEwe5zfvyMAALIQABa1z4AETCT730.jpg', title: '11' },
+      { src: 'http://desk-fd.zol-img.com.cn/g5/M00/02/05/ChMkJ1bKyZmIWCwZABEwe5zfvyMAALIQABa1z4AETCT730.jpg', title: "22" },
+      { src: 'http://desk-fd.zol-img.com.cn/g5/M00/02/05/ChMkJ1bKyZmIWCwZABEwe5zfvyMAALIQABa1z4AETCT730.jpg', title: "33" }
+        
+      ],
+      galleryCurrent: 0
+    })
+  },
+  onTap2() {
+    this.setData({
+      galleryShow: true,
+      galleryImgs: [
+      { src: 'https://placekitten.com/600/400', title: '111' },
+      { src: 'https://placekitten.com/1200/900', title: "222" }
+        
+      ],
+      galleryCurrent: 0
+    })
+  },
+
 
 })
