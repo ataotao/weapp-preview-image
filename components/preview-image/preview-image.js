@@ -97,7 +97,6 @@ Component({
         touchStart: (evt) => {
           touchStartX = evt.touches[0].pageX; // 获取触摸时的原点
           touchStartY = evt.touches[0].pageY; // 获取触摸时的原点
-          // console.log(touchStartX);
         },
         touchMove: () => {},
         touchEnd: () => {},
@@ -214,6 +213,14 @@ Component({
                 }
               }
               break;
+            // 下滑页面
+            case "Down":
+              if(operateType === 'down') {
+                operateType = null;
+                this.hideGallery();
+              }
+              break;
+              
             default:
               break;
           }
@@ -241,10 +248,21 @@ Component({
       let img_height = _currentImgs[_currentCount].height * _imageScale;
       let translateX = -(touchStartX - touchMoveX) + _currentImgs[_currentCount].imageX;
       let translateY = -(touchStartY - touchMoveY) + _currentImgs[_currentCount].imageY;
+      operateType = null;
+      
+      if(_imageScale === 1 && touchMoveY > touchStartY) {
+        _currentImgs[_currentCount].imageY = translateY;
+        operateType = 'down';
+        this.setData({
+          _currentImgs,
+        });
+      }
+      
       touchStartX = touchMoveX;
       touchStartY = touchMoveY;
-      operateType = null;
+
       if (_imageScale > 1) {
+
         // 图片大于画布宽度才可左右拖动
         if (img_width > _contentWidth) {
           // 左边界
