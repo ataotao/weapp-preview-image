@@ -22,6 +22,7 @@ const initData = {
   _contentHeight: 0,
   _imageScale: 1,
   _arrowVisible: false,
+  _swipeType: 0
 };
 
 Component({
@@ -107,6 +108,12 @@ Component({
         },
         //当手指离开，屏幕只剩一个手指或零个手指触发(一开始只有一根手指也会触发)
         multipointEnd: () => {
+
+          // 下滑结束关闭图片(_swipeType < 0.95，为了区别左右滑动的精度)
+          if(this.data._swipeType > 0 && this.data._swipeType < 0.95) {
+            // console.log(this.data._swipeType);
+            this.hideGallery();
+          }
           // console.log("multipointEnd");
         },
         //点按触发，覆盖下方3个点击事件，doubleTap时触发2次
@@ -158,6 +165,7 @@ Component({
           this.touchInit.tempZoom = scale;
           // console.log("scale", scale);
           let obj = {
+            _swipeType: 0,
             _imageScale: scale,
           };
           if (scale === 1) {
@@ -170,7 +178,7 @@ Component({
         pressMove: this.throttlePressMove,
         swipe: (evt) => {
           //在touch结束触发，evt.direction代表滑动的方向 ['Up','Right','Down','Left']
-          console.log("swipe:" + evt.direction);
+          // console.log("swipe:" + evt.direction);
           const { _currentCount, _currentImgs, _imageScale } = this.data;
           let current = 0;
           switch (evt.direction) {
@@ -179,12 +187,13 @@ Component({
               current = _currentCount + 1;
               if (current < _currentImgs.length) {
                 if ((operateType === "move" && _currentImgs[_currentCount].isEdeg) || _imageScale === 1) {
-                  console.log("Left operateType === move || _imageScale === 1");
+                  // console.log("Left operateType === move || _imageScale === 1");
                   this.setData(
                     {
                       _currentImgs: _currentImgs.map((v) => (v.imageX !== v.orgImageX || v.imageY !== v.orgImageY ? { ...v, isEdeg: false, imageX: v.orgImageX, imageY: v.orgImageY } : v)),
                       _currentCount: _currentCount + 1,
                       _imageScale: 1,
+                      _swipeType: 0,
                       isEdeg: false
                     },
                     () => {
@@ -199,25 +208,19 @@ Component({
               current = _currentCount - 1;
               if (current >= 0) {
                 if ((operateType === "move" && _currentImgs[_currentCount].isEdeg) || _imageScale === 1) {
-                  console.log("Right operateType === move || _imageScale === 1");
+                  // console.log("Right operateType === move || _imageScale === 1");
                   this.setData(
                     {
                       _currentImgs: _currentImgs.map((v) => (v.imageX !== v.orgImageX || v.imageY !== v.orgImageY ? { ...v, isEdeg: false, imageX: v.orgImageX, imageY: v.orgImageY } : v)),
                       _currentCount: current,
-                      _imageScale: 1
+                      _imageScale: 1,
+                      _swipeType: 0
                     },
                     () => {
                       operateType = null;
                     }
                   );
                 }
-              }
-              break;
-            // 下滑页面
-            case "Down":
-              if(operateType === 'down') {
-                operateType = null;
-                this.hideGallery();
               }
               break;
               
@@ -250,10 +253,17 @@ Component({
       let translateY = -(touchStartY - touchMoveY) + _currentImgs[_currentCount].imageY;
       operateType = null;
       
+      // 下滑处理 
       if(_imageScale === 1 && touchMoveY > touchStartY) {
         _currentImgs[_currentCount].imageY = translateY;
-        operateType = 'down';
+        let _swipeType = this.data._swipeType;
+        if(_swipeType === 0) {
+          _swipeType = _imageScale - 0.01;
+        }else{
+          _swipeType = _swipeType - 0.01;
+        }
         this.setData({
+          _swipeType: _swipeType < 0.3 ? 0.3 : _swipeType,
           _currentImgs,
         });
       }
@@ -369,8 +379,14 @@ Component({
     hideGallery() {
       this.setData({
         show: false,
-        _currentCount: 0,
-        _imageScale: 1,
+      }, () => {
+        setTimeout(() => {
+          this.setData({
+            _currentCount: 0,
+            _imageScale: 1,
+            _swipeType: 0
+          });
+        }, 100);
       });
     },
 
@@ -380,6 +396,7 @@ Component({
       this.setData({
         _currentCount: _currentCount > 0 ? _currentCount - 1 : 0,
         _imageScale: 1,
+        _swipeType: 0
       });
     },
 
@@ -390,6 +407,7 @@ Component({
       this.setData({
         _currentCount: count >= len ? len - 1 : count,
         _imageScale: 1,
+        _swipeType: 0
       });
     },
     /** 左右箭头 */

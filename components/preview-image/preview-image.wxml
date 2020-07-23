@@ -1,24 +1,11 @@
 <!-- components/preview-image/preview-image.wxml -->
-<!-- <view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}">
-  <view class="preview-image-list tran" style="transform: translateX(-{{_currentCount * _contentWidth}}px) translateZ(0); width: {{_contentWidth * _currentImgs.length}}px;">
-    <view class="preview-image-item" wx:for="{{_currentImgs}}" wx:key="src" bind:touchstart="touchStart" bind:touchmove="throttleTouchMove" bind:touchend="touchEnd">
-      >
-      <view class="preview-image-loading" wx:if="{{_isLoading}}">
-        <text class="iconfont sp_weapp_iconjiazaizhong rotate margin-right-xs">loading...</text>
-      </view>
-      <image class="tran" src="{{item.src}}" style="width:{{item.width}}px; height:{{item.height}}px; transform:translate3d({{item.imageX}}px, {{item.imageY}}px,0) scale({{_imageScale}}); translateZ(0); transition-duration:.3s;" wx:else></image>
-    </view>
-  </view>
-</view> -->
-
-<!-- <view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" bind:touchstart="touchStart" bind:touchmove="throttleTouchMove" bind:touchend="touchEnd" bind:tap="doubleClick"> -->
-<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" catch:touchstart="touchInit.start" catch:touchmove="touchInit.move" catch:touchend="touchInit.end" catch:tap="touchInit.cancel" style="background-color: {{_imageScale < 1 ? 'rgba(0,0,0,0.6)' : '#000'}}">
+<view class="preview-image-content {{_currentShow ? 'preview-image-show' : ''}}" catch:touchstart="touchInit.start" catch:touchmove="touchInit.move" catch:touchend="touchInit.end" catch:tap="touchInit.cancel" style="background-color: {{(_swipeType > 0 && _swipeType < 0.95 )? 'rgba(0,0,0,0.6)' : '#000'}}">
   <view class="preview-image-list" style="transform: translate(-{{_currentCount * _contentWidth}}px, 0); width: {{_contentWidth * _currentImgs.length}}px;">
     <view class="preview-image-item tran" wx:for="{{_currentImgs}}" wx:key="src">
       <view class="preview-image-loading" hidden="{{!_isLoading}}">
         <text class="iconfont sp_weapp_iconjiazaizhong rotate margin-right-xs">loading...</text>
       </view>
-      <image src="{{item.src}}" style="width:{{item.width}}px; height:{{item.height}}px; transform:translate3d({{item.imageX}}px, {{item.imageY}}px, 0) scale({{_imageScale}}); transition-duration:.2s;" hidden="{{_isLoading}}"></image>
+      <image src="{{item.src}}" style="width:{{item.width}}px; height:{{item.height}}px; transform:translate3d({{item.imageX}}px, {{item.imageY}}px, 0) scale({{_swipeType || _imageScale}}); transition-duration:.2s;" hidden="{{_isLoading}}"></image>
     </view>
   </view>
 </view>
